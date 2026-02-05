@@ -3,6 +3,7 @@ using SimpleExample.Application.Interfaces;
 using SimpleExample.Application.Services;
 using SimpleExample.Infrastructure.Data;
 using SimpleExample.Infrastructure.Repositories;
+using System.Reflection;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -34,7 +35,13 @@ builder.Services.AddScoped<IUserService, UserService>();
 
 // Add API documentation
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Add XML comments to swagger
+builder.Services.AddSwaggerGen( options =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    options.IncludeXmlComments(xmlPath);
+});
 
 WebApplication app = builder.Build();
 
