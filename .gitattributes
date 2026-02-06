@@ -1,4 +1,0 @@
-# Ensure text files are normalized and treated as UTF-8 in the working tree
-*.cs text eol=lf working-tree-encoding=UTF-8
-*.csproj text eol=lf working-tree-encoding=UTF-8
-*.sln text eol=lf working-tree-encoding=UTF-8
