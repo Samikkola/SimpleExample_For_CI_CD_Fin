@@ -1,14 +1,26 @@
 ﻿using FluentAssertions;
 using SimpleExample.Domain.Entities;
+using System;
+using System.Text;
 using Xunit;
-
 namespace SimpleExample.Tests.Domain;
+
+
 
 public class UserTests
 {
+    //To help CI/CD pipelines that have issues with non-ASCII characters in test output, set the output encoding to UTF-8 in the constructor.
+    //TODO: ask teacher
+    static UserTests()
+    {
+        Console.OutputEncoding = Encoding.UTF8;
+    }
+
+
     [Fact]
     public void Constructor_WithValidData_ShouldCreateUser()
     {
+        
         // Act
         User user = new User("Matti", "Meikäläinen", "matti@example.com");
 
