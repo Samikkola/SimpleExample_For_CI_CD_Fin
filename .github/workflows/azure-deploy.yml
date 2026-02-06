@@ -10,6 +10,8 @@ on:
 env:
   DOTNET_VERSION: '9.0.x'
   AZURE_WEBAPP_NAME: 'firstAzureApp'  # Vaihda t‰h‰n!
+  LANG: fi_FI.UTF-8 # Pakotetaan locale, jotta p‰‰st‰‰n eteenp‰in #TODO: Kysy opettajalta
+  LC_ALL: fi_FI.UTF-8
 
 jobs:
   # Job 1: Build ja testit (CI)
