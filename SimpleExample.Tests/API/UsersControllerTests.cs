@@ -5,6 +5,7 @@ using Moq;
 using SimpleExample.API.Controllers;
 using SimpleExample.Application.DTOs;
 using SimpleExample.Application.Interfaces;
+using SimpleExample.Domain.Entities;
 using Xunit;
 
 namespace SimpleExample.Tests.API;
@@ -114,10 +115,188 @@ public class UsersControllerTests
 
     // TEHTÄVÄ: Kirjoita itse testit seuraaville:
     // 1. Create - InvalidOperationException (duplicate) → 409 Conflict
+    [Fact]
+    public async Task Create_WithDuplicateEmail_ShouldReturnConflict()
+    {
+        // Arrange
+        Guid userId = Guid.NewGuid();
+        CreateUserDto createDto = new CreateUserDto
+        {
+            FirstName = "Matti",
+            LastName = "Meikäläinen",
+            Email = "matti@example.com"
+        };
+
+        User existingUser = new User( "Matti", "Meikäläinen", "matti@example.com");
+        
+        _mockService
+            .Setup(x => x.CreateAsync(createDto))
+            .ThrowsAsync(new InvalidOperationException());
+
+        // Act
+        ActionResult<UserDto> result = await _controller.Create(createDto);
+
+        // Assert
+        result.Result.Should().BeOfType<ConflictObjectResult>();
+
+        //Varmistetaan kutsu
+        _mockService.Verify(x => x.CreateAsync(createDto), Times.Once);
+    }
+
     // 2. Create - ArgumentException (validation) → 400 BadRequest
+    [Fact]
+    public async Task Create_WithInvalidData_ShouldReturnBadRequest()
+    {
+        // Arrange
+        CreateUserDto createDto = new CreateUserDto
+        {
+            FirstName = "Ma", // liian lyhyt
+            LastName = "Meikäläinen",
+            Email = "matti@example.com"
+        };
+
+        _mockService
+            .Setup(x => x.CreateAsync(createDto))
+            .ThrowsAsync(new ArgumentException());
+
+        // Act
+        ActionResult<UserDto> result = await _controller.Create(createDto);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+
+        //Varmistetaan kutsu
+        _mockService.Verify(x => x.CreateAsync(createDto), Times.Once);
+
+    }
+
     // 3. Update - onnistuu → 200 OK
+    [Fact]
+    public async Task Update_WhenUserExists_ShouldReturnOk()
+    {
+        // Arrange
+        Guid userId = Guid.NewGuid();
+        UpdateUserDto updateDto = new UpdateUserDto
+        {
+            FirstName = "Matti",
+            LastName = "Meikäläinen",
+            Email = "matti@exampl.com"
+        };
+
+        _mockService
+            .Setup(x => x.UpdateAsync(userId, updateDto))
+            .ReturnsAsync(new UserDto
+            {
+                Id = userId,
+                FirstName = updateDto.FirstName,
+                LastName = updateDto.LastName,
+                Email = updateDto.Email
+            });
+
+        //Act 
+        ActionResult<UserDto> result = await _controller.Update(userId, updateDto);
+
+        // Assert
+        OkObjectResult okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        UserDto returnedUser = okResult.Value.Should().BeOfType<UserDto>().Subject;
+        returnedUser.Id.Should().Be(userId);
+        returnedUser.FirstName.Should().Be(updateDto.FirstName);
+        returnedUser.LastName.Should().Be(updateDto.LastName);
+        returnedUser.Email.Should().Be(updateDto.Email);
+
+        //Varmistetaan kutsu
+        _mockService.Verify(x => x.UpdateAsync(userId, updateDto), Times.Once);
+
+    }
     // 4. Update - käyttäjää ei löydy → 404 NotFound
+    [Fact]
+    public async Task Update_WhenUserNotFound_ShouldReturnNotFound()
+    {
+        // Arrange
+        Guid userId = Guid.NewGuid();
+        UpdateUserDto updateDto = new UpdateUserDto
+        {
+            FirstName = "Matti",
+            LastName = "Meikäläinen",
+            Email = "matti@example.com"
+        };
+
+        _mockService
+            .Setup(x => x.UpdateAsync(userId, updateDto))
+            .ReturnsAsync((UserDto?)null);
+
+        // Act
+        ActionResult<UserDto> result = await _controller.Update(userId, updateDto);
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+
+        //Varmistetaan kutsu
+        _mockService.Verify(x => x.UpdateAsync(userId, updateDto), Times.Once);
+    }
+
     // 5. Update - ArgumentException → 400 BadRequest
+    [Fact]
+    public async Task Update_WithInvalidData_ShouldReturnBadRequest()
+    {
+        // Arrange
+        Guid userId = Guid.NewGuid();
+        UpdateUserDto updateDto = new UpdateUserDto
+        {
+            FirstName = "Ma", // liian lyhyt
+            LastName = "Meikäläinen",
+            Email = "matti@example.com"
+        };
+        _mockService
+            .Setup(x => x.UpdateAsync(userId, updateDto))
+            .ThrowsAsync(new ArgumentException());
+        // Act
+        ActionResult<UserDto> result = await _controller.Update(userId, updateDto);
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+        //Varmistetaan kutsu
+        _mockService.Verify(x => x.UpdateAsync(userId, updateDto), Times.Once);
+    }
+
     // 6. Delete - onnistuu → 204 NoContent
+    [Fact]
+    public async Task Delete_WhenUserExists_ShouldReturnNoContent()
+    {
+        // Arrange
+        Guid userId = Guid.NewGuid();
+
+        _mockService
+            .Setup(x => x.DeleteAsync(userId))
+            .ReturnsAsync(true);
+
+        // Act
+        IActionResult result = await _controller.Delete(userId);
+
+        // Assert
+        result.Should().BeOfType<NoContentResult>();
+
+        //Varmistetaan kutsu
+        _mockService.Verify(x => x.DeleteAsync(userId), Times.Once);
+    }
+
     // 7. Delete - käyttäjää ei löydy → 404 NotFound
+    [Fact]
+    public async Task Delete_WhenUserNotFound_ShouldReturnNotFound()
+    {
+        // Arrange
+        Guid userId = Guid.NewGuid();
+
+        _mockService
+            .Setup(x => x.DeleteAsync(userId))
+            .ReturnsAsync(false);
+
+        // Act
+        IActionResult result = await _controller.Delete(userId);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+
+        //Varmistetaan kutsu
+        _mockService.Verify(x => x.DeleteAsync(userId), Times.Once);
+    }
 }
