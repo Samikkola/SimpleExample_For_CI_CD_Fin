@@ -27,7 +27,14 @@ public class UserService : IUserService
 
     public async Task<UserDto> CreateAsync(CreateUserDto createUserDto)
     {
-        // Konstruktori validoi automaattisesti!
+        User? existingUser = await _userRepository.GetByEmailAsync(createUserDto.Email);
+        if(existingUser != null)
+        {
+            throw new InvalidOperationException($"Käyttäjä sähköpostilla {createUserDto.Email} on jo olemassa");
+        }
+
+
+        // Domain layer:Konstruktori validoi automaattisesti
         User user = new User(
             createUserDto.FirstName,
             createUserDto.LastName,
